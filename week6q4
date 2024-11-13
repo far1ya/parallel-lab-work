@@ -1,0 +1,74 @@
+#include <iostream>
+#include <vector>
+#include <cstdlib>
+#include <ctime>
+#include <chrono>
+#include <omp.h>
+
+using namespace std;
+
+// Function for Sequential Counting of Specific Value
+int countOccurrencesSequential(const vector<int>& arr, int target) {
+    int count = 0;
+    for (size_t i = 0; i < arr.size(); i++) {
+        if (arr[i] == target) {
+            count++;
+        }
+    }
+    return count;
+}
+
+// Function for Parallel Counting using OpenMP
+int countOccurrencesParallel(const vector<int>& arr, int target) {
+    int count = 0;
+    
+    #pragma omp parallel for reduction(+:count)
+    for (size_t i = 0; i < arr.size(); i++) {
+        if (arr[i] == target) {
+            count++;
+        }
+    }
+    return count;
+}
+
+int main() {
+    int N = 1000000;  // Array size (test with different sizes)
+    int target = 7;   // The target value to count in the array
+
+    // Create an array and fill it with random values between 0 and 10
+    vector<int> arr(N);
+    srand(time(0));
+    for (int i = 0; i < N; i++) {
+        arr[i] = rand() % 10;  // Random values between 0 and 9
+    }
+
+    // Sequential Version
+    auto start = chrono::high_resolution_clock::now();
+    int sequentialCount = countOccurrencesSequential(arr, target);
+    auto end = chrono::high_resolution_clock::now();
+    chrono::duration<double> sequentialDuration = end - start;
+    cout << "Sequential Count: " << sequentialCount << endl;
+    cout << "Sequential Execution Time: " << sequentialDuration.count() << " seconds" << endl;
+
+    // Parallel Version
+    int num_threads = 4;  // You can experiment with 2, 4, 8 threads
+    omp_set_num_threads(num_threads);
+
+    start = chrono::high_resolution_clock::now();
+    int parallelCount = countOccurrencesParallel(arr, target);
+    end = chrono::high_resolution_clock::now();
+    chrono::duration<double> parallelDuration = end - start;
+    cout << "Parallel Count (with " << num_threads << " threads): " << parallelCount << endl;
+    cout << "Parallel Execution Time: " << parallelDuration.count() << " seconds" << endl;
+
+    // Performance Analysis: Speedup and Efficiency
+    double speedup = sequentialDuration.count() / parallelDuration.count();
+    double efficiency = speedup / num_threads;
+
+    // Print Speedup and Efficiency
+    cout << fixed;
+    cout << "Speedup: " << speedup << endl;
+    cout << "Efficiency: " << efficiency << endl;
+
+    return 0;
+}
