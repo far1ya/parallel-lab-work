@@ -1,0 +1,77 @@
+#include <iostream>
+#include <vector>
+#include <cstdlib>
+#include <ctime>
+#include <chrono>
+#include <omp.h>
+
+using namespace std;
+
+// Simulate a workload that is parallelizable
+void parallelizableWork(int n) {
+    #pragma omp parallel for
+    for (int i = 0; i < n; i++) {
+        // Simulate some work (e.g., incrementing an array element)
+        // In this case, we just add 1 to each element (it can be any computational task)
+        // This part will be parallelized
+    }
+}
+
+// Simulate a workload that is sequential (cannot be parallelized)
+void sequentialWork(int n) {
+    for (int i = 0; i < n; i++) {
+        // Simulate some sequential work
+        // This part cannot be parallelized, so it's done by a single thread
+    }
+}
+
+int main() {
+    int N = 100000000; // Total work size (e.g., 100 million iterations)
+    
+    int parallelWorkSize = 0.7 * N;  // 70% of work is parallelizable
+    int sequentialWorkSize = 0.3 * N; // 30% of work is sequential
+    
+    // For testing purposes, we'll simulate the mixed workload.
+    
+    // Sequential execution time for the entire workload (without parallelization)
+    auto start = chrono::high_resolution_clock::now();
+    
+    // Sequential part
+    sequentialWork(sequentialWorkSize);
+    
+    // Parallelizable part
+    parallelizableWork(parallelWorkSize);
+    
+    auto end = chrono::high_resolution_clock::now();
+    chrono::duration<double> sequentialDuration = end - start;
+    cout << "Sequential Execution Time: " << sequentialDuration.count() << " seconds" << endl;
+    
+    // Parallel execution using OpenMP
+    int numThreads = 4; // Number of threads for OpenMP
+    omp_set_num_threads(numThreads);
+
+    start = chrono::high_resolution_clock::now();
+    
+    // Sequential part
+    sequentialWork(sequentialWorkSize);
+    
+    // Parallel part
+    parallelizableWork(parallelWorkSize);
+    
+    end = chrono::high_resolution_clock::now();
+    chrono::duration<double> parallelDuration = end - start;
+    cout << "Parallel Execution Time (with " << numThreads << " threads): " << parallelDuration.count() << " seconds" << endl;
+    
+    // Calculate speedup using Amdahl's Law and actual measured speedup
+    double theoreticalSpeedup = 1 / ((1 - 0.7) + (0.7 / numThreads));
+    double actualSpeedup = sequentialDuration.count() / parallelDuration.count();
+    
+    cout << "Theoretical Speedup (Amdahl's Law): " << theoreticalSpeedup << endl;
+    cout << "Actual Speedup: " << actualSpeedup << endl;
+    
+    // Calculate efficiency
+    double efficiency = actualSpeedup / numThreads;
+    cout << "Efficiency: " << efficiency << endl;
+
+    return 0;
+}
