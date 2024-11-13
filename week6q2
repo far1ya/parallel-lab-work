@@ -1,0 +1,80 @@
+#include <iostream>
+#include <vector>
+#include <cstdlib>
+#include <ctime>
+#include <chrono>
+#include <omp.h>
+#include <iomanip>
+
+using namespace std;
+
+// Sequential matrix multiplication function
+void matrixMultiplicationSequential(const vector<vector<int>>& A, const vector<vector<int>>& B, vector<vector<int>>& C, int N) {
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            C[i][j] = 0;
+            for (int k = 0; k < N; k++) {
+                C[i][j] += A[i][k] * B[k][j];
+            }
+        }
+    }
+}
+
+// Parallel matrix multiplication using OpenMP
+void matrixMultiplicationParallel(const vector<vector<int>>& A, const vector<vector<int>>& B, vector<vector<int>>& C, int N) {
+    #pragma omp parallel for
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            C[i][j] = 0;
+            for (int k = 0; k < N; k++) {
+                C[i][j] += A[i][k] * B[k][j];
+            }
+        }
+    }
+}
+
+int main() {
+    int N = 1000;  // Matrix size (N x N)
+
+    // Create and initialize matrices A, B, and C
+    vector<vector<int>> A(N, vector<int>(N));
+    vector<vector<int>> B(N, vector<int>(N));
+    vector<vector<int>> C(N, vector<int>(N));
+
+    // Fill matrices A and B with random values
+    srand(time(0));
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            A[i][j] = rand() % 100;
+            B[i][j] = rand() % 100;
+        }
+    }
+
+    // Sequential matrix multiplication
+    auto start = chrono::high_resolution_clock::now();
+    matrixMultiplicationSequential(A, B, C, N);
+    auto end = chrono::high_resolution_clock::now();
+    chrono::duration<double> sequential_duration = end - start;
+    cout << "Sequential Matrix Multiplication Time: " << sequential_duration.count() << " seconds" << endl;
+
+    // Parallel matrix multiplication (OpenMP)
+    int num_threads = 4;  // You can experiment with different values (e.g., 2, 4, 8)
+    omp_set_num_threads(num_threads);
+
+    start = chrono::high_resolution_clock::now();
+    matrixMultiplicationParallel(A, B, C, N);
+    end = chrono::high_resolution_clock::now();
+    chrono::duration<double> parallel_duration = end - start;
+    cout << "Parallel Matrix Multiplication Time (with " << num_threads << " threads): " << parallel_duration.count() << " seconds" << endl;
+
+    // Speedup and Efficiency Calculation
+    double speedup = sequential_duration.count() / parallel_duration.count();
+    double efficiency = speedup / num_threads;
+
+    // Print Speedup and Efficiency
+    cout << fixed << setprecision(2);
+    cout << "Speedup: " << speedup << endl;
+    cout << "Efficiency: " << efficiency << endl;
+
+    return 0;
+}
