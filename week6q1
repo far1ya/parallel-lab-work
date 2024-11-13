@@ -1,0 +1,73 @@
+#include <iostream>
+#include <omp.h>
+#include <vector>
+#include <cstdlib>
+#include <ctime>
+#include <iomanip> // for fixed and setprecision
+
+using namespace std;
+
+int main() {
+    // Define the size of the array (1 million elements for this example)
+    const int n = 1000000;
+    vector<double> array(n);
+    
+    // Initialize the array with random values
+    srand(time(0));
+    for (int i = 0; i < n; ++i) {
+        array[i] = rand() % 1000;  // Random integers between 0 and 999
+    }
+    
+    // Variables to hold sum and timing
+    double sum = 0.0;
+    double start_time, end_time;
+
+    // Set the number of threads for OpenMP
+    int num_threads = 4;  // You can experiment with different values (e.g., 2, 4, 8)
+
+    // Set OpenMP number of threads
+    omp_set_num_threads(num_threads);
+
+    // Measure time for parallel execution
+    start_time = omp_get_wtime();
+
+    // Parallel sum using OpenMP with the reduction clause
+    #pragma omp parallel for reduction(+:sum)
+    for (int i = 0; i < n; ++i) {
+        sum += array[i];
+    }
+
+    end_time = omp_get_wtime();
+
+    // Calculate execution time
+    double parallel_time = end_time - start_time;
+
+    // Print the result (sum) and execution time
+    cout << "Parallel Sum = " << sum << endl;
+    cout << "Parallel Execution Time: " << parallel_time << " seconds" << endl;
+
+    // For comparison, run the sequential code to measure speedup
+    double sequential_sum = 0.0;
+    start_time = omp_get_wtime();
+    
+    // Sequential sum (without parallelism)
+    for (int i = 0; i < n; ++i) {
+        sequential_sum += array[i];
+    }
+
+    end_time = omp_get_wtime();
+    double sequential_time = end_time - start_time;
+
+    cout << "Sequential Sum = " << sequential_sum << endl;
+    cout << "Sequential Execution Time: " << sequential_time << " seconds" << endl;
+
+    // Speedup and efficiency
+    double speedup = sequential_time / parallel_time;
+    double efficiency = speedup / num_threads;
+
+    cout << fixed << setprecision(2);
+    cout << "Speedup: " << speedup << endl;
+    cout << "Efficiency: " << efficiency << endl;
+
+    return 0;
+}
